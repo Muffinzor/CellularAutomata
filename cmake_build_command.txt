@@ -1,0 +1,9 @@
+# clean state
+rm -rf build
+
+# actual building
+cmake -S . -B build
+cmake --build build
+
+# running the app
+./build/CellularAutomata
