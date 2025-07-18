@@ -1,9 +1,13 @@
-# clean state
+# creating clean state
 rm -rf build
 
-# actual building
+# building the executable
 cmake -S . -B build
 cmake --build build
 
-# running the app
+# running the app on linux after building
 ./build/CellularAutomata
+
+# running the app on Windows after building
+./build/Debug/CellularAutomata.exe
+
