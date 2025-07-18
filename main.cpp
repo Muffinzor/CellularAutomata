@@ -16,7 +16,7 @@ int main() {
     InputManager inputManager(matrix, window, CELL_SIZE);
 
     sf::Clock clock;
-    const sf::Time timePerUpdate = sf::seconds(1.f / 30.f);
+    const sf::Time timePerUpdate = sf::seconds(1.f / 60.f);
     sf::Time timeSinceLastUpdate = sf::Time::Zero;
 
     int frameCount = 0;
@@ -37,9 +37,10 @@ int main() {
         }
 
         timeSinceLastUpdate += clock.restart();
-        if (timeSinceLastUpdate >= timePerUpdate) {
+        while (timeSinceLastUpdate >= timePerUpdate) {
             inputManager.handle_input();
             matrix.update_all_cells();
+            timeSinceLastUpdate -= timePerUpdate;
         }
 
         window.clear();
