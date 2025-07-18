@@ -1,13 +1,17 @@
 # creating clean state
 rm -rf build
 
-# building the executable
-cmake -S . -B build
+# building the executable in debug
+cmake -S . -B build    
 cmake --build build
+
+# building the executable in release
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
 
 # running the app on linux after building
 ./build/CellularAutomata
 
-# running the app on Windows after building
-./build/Debug/CellularAutomata.exe
+# On windows, just double click the run.bat file to build and launch the .exe
+
 

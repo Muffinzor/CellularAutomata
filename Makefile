@@ -1,5 +1,5 @@
 CXX := g++
-CXXFLAGS := -std=c++20 -I/usr/local/include
+CXXFLAGS := -std=c++20 -02 -I/usr/local/include
 
 LDFLAGS := -L/usr/local/lib -lsfml-graphics -lsfml-window -lsfml-system -pthread -ldl -lm
 

@@ -1,6 +1,7 @@
 #include "CellularMatrix.h"
 
 #include <cmath>
+#include <iostream>
 
 #include "../Utility.h"
 #include "../Particles/ParticleBehavior.h"
