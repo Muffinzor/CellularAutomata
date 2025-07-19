@@ -12,7 +12,7 @@ void ParticleBehavior::solid_behavior(CellularMatrix& matrix, int x, int y) {
     bool has_moved;
     if (current->immovable) return;
 
-    current->velocity.y += 0.1f;
+    current->velocity.y += 0.2f;
 
     int fall_distance = std::floor(current->velocity.y);
     int current_y = y;

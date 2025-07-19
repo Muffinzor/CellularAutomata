@@ -30,49 +30,70 @@ CellularMatrix::CellularMatrix(int width, int height)
             chunks[cy].emplace_back(chunk_x_pos, chunk_y_pos, CHUNK_SIZE);
         }
     }
+    thread_vertex_arrays.resize(num_threads);
+    for (auto& va : thread_vertex_arrays) {
+        va.setPrimitiveType(sf::PrimitiveType::Triangles);
+    }
 }
 
 /** Draws every particle in the grid in one draw call */
-void CellularMatrix::display_matrix(sf::RenderWindow& window, int CELL_SIZE) {
-    sf::VertexArray vertices(sf::PrimitiveType::Triangles);
+void CellularMatrix::display_matrix(sf::RenderWindow& window, int Cell_size, ThreadPool& pool) {
+    const int chunk_width = width / num_threads;
+    const int vertex_count = 6;
 
-    // reserve max vertices per triangle
-    vertices.resize(width * height * 6);
-
-    int vertexCount = 0;
-
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            Particle* p = get_cell(x, y);
-            if (p != nullptr) {
-                float xPos = static_cast<float>(x * CELL_SIZE);
-                float yPos = static_cast<float>(y * CELL_SIZE);
-                sf::Color color = p->color;
-
-                vertices[vertexCount + 0].position = sf::Vector2f(xPos, yPos);
-                vertices[vertexCount + 0].color = color;
-
-                vertices[vertexCount + 1].position = sf::Vector2f(xPos + CELL_SIZE, yPos);
-                vertices[vertexCount + 1].color = color;
-
-                vertices[vertexCount + 2].position = sf::Vector2f(xPos + CELL_SIZE, yPos + CELL_SIZE);
-                vertices[vertexCount + 2].color = color;
-
-                vertices[vertexCount + 3].position = sf::Vector2f(xPos, yPos);
-                vertices[vertexCount + 3].color = color;
-
-                vertices[vertexCount + 4].position = sf::Vector2f(xPos + CELL_SIZE, yPos + CELL_SIZE);
-                vertices[vertexCount + 4].color = color;
-
-                vertices[vertexCount + 5].position = sf::Vector2f(xPos, yPos + CELL_SIZE);
-                vertices[vertexCount + 5].color = color;
-
-                vertexCount += 6;
-            }
-        }
+    for (auto& va : thread_vertex_arrays) {
+        va.clear();
     }
-    vertices.resize(vertexCount);
-    window.draw(vertices);
+
+    for (int i = 0; i < num_threads; ++i) {
+        int actual_chunk_width = (i == num_threads - 1) ? width - i * chunk_width : chunk_width;
+        thread_vertex_arrays[i].setPrimitiveType(sf::PrimitiveType::Triangles);
+        thread_vertex_arrays[i].resize(actual_chunk_width * height * vertex_count);
+    }
+
+    for (int t = 0; t < num_threads; ++t) {
+        pool.enqueue([this, t, chunk_width, vertex_count, Cell_size](void) {
+            int start_x = t * chunk_width;
+            int end_x = (t == num_threads - 1) ? width : (t + 1) * chunk_width;
+            auto& va = thread_vertex_arrays[t];
+
+            int index = 0;
+
+            for (int y = 0; y < height; ++y) {
+                for (int x = start_x; x < end_x; ++x) {
+                    Particle* p = cells[y][x];
+                    if (!p) continue;
+
+                    sf::Color color = p->color;
+
+                    float xf = static_cast<float>(x * Cell_size);
+                    float yf = static_cast<float>(y * Cell_size);
+
+                    va[index + 0].position = sf::Vector2f(xf, yf);
+                    va[index + 1].position = sf::Vector2f(xf + Cell_size, yf);
+                    va[index + 2].position = sf::Vector2f(xf + Cell_size, yf + Cell_size);
+
+                    va[index + 3].position = sf::Vector2f(xf, yf);
+                    va[index + 4].position = sf::Vector2f(xf + Cell_size, yf + Cell_size);
+                    va[index + 5].position = sf::Vector2f(xf, yf + Cell_size);
+
+                    for (int i = 0; i < vertex_count; ++i) {
+                        va[index + i].color = color;
+                    }
+
+                    index += vertex_count;
+                }
+            }
+
+            va.resize(index);
+        });
+    }
+
+    pool.wait_all();
+
+    for (auto& va : thread_vertex_arrays) {
+        window.draw(va);
+    }
 }
 
 void CellularMatrix::set_cell(int x, int y, Particle* particle) {

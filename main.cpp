@@ -2,7 +2,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "SourceCode/InputManager.h"
-#include "SourceCode/Utility.h"
+#include "SourceCode/ThreadPool.h"
 #include "SourceCode/Grid/CellularMatrix.h"
 
 const int CELL_SIZE = 2;
@@ -11,6 +11,7 @@ const int GRID_HEIGHT = 400;
 
 int main() {
     sf::RenderWindow window(sf::VideoMode({ 800, 800 }), "Cellular Automata");
+    ThreadPool pool(std::thread::hardware_concurrency());
 
     CellularMatrix matrix(GRID_WIDTH, GRID_HEIGHT);
     InputManager inputManager(matrix, window, CELL_SIZE);
@@ -44,8 +45,8 @@ int main() {
         }
 
         window.clear();
-        matrix.display_matrix(window, CELL_SIZE);
-        matrix.display_chunk_debug(window, CELL_SIZE);
+        matrix.display_matrix(window, CELL_SIZE, pool);
+        //matrix.display_chunk_debug(window, CELL_SIZE);
         inputManager.draw_selection_rectangle(window);
         window.display();
     }

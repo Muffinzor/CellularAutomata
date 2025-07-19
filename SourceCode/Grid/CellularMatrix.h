@@ -1,7 +1,9 @@
 #pragma once
+#include <thread>
 #include <vector>
 #include <SFML/Graphics.hpp>
 #include "../Particles/Particle.h"
+#include "../ThreadPool.h"
 #include "Chunk.h"
 
 class CellularMatrix {
@@ -12,8 +14,11 @@ public:
     std::vector<std::vector<Particle*>> cells;
     std::vector<std::vector<Chunk>> chunks;
 
+    int num_threads = std::thread::hardware_concurrency();
+    std::vector<sf::VertexArray> thread_vertex_arrays;
+
     CellularMatrix(int width, int height);
-    void display_matrix(sf::RenderWindow& window, int CELL_SIZE);
+    void display_matrix(sf::RenderWindow& window, int CELL_SIZE, ThreadPool& thread_pool);
 
     void set_cell(int x, int y, Particle* particle);
     Particle* get_cell(int x, int y);
