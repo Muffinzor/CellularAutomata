@@ -3,13 +3,34 @@
 //
 
 #include "ParticleBehavior.h"
+#include "../Utility.h"
 
 #include <cmath>
+
+bool diagonal_slide(CellularMatrix& matrix, int x, int y, Particle* p) {
+    bool can_slide_DR = matrix.get_cell(x + 1, y + 1) == nullptr;
+    bool can_slide_DL = matrix.get_cell(x - 1, y + 1) == nullptr;
+    int direction = 0;
+    bool has_slided = false;
+    if (can_slide_DR && can_slide_DL) {
+        Utility::random_bool() ? direction = -1 : direction = 1;
+    } else if (can_slide_DR) {
+        direction = 1;
+    } else if (can_slide_DL) {
+        direction = -1;
+    }
+    if (direction != 0) {
+        matrix.set_cell(x + direction, y + 1, p);
+        matrix.set_cell(x, y, nullptr);
+        has_slided = true;
+    }
+    return has_slided;
+}
 
 void ParticleBehavior::solid_behavior(CellularMatrix& matrix, int x, int y) {
     Particle* current = matrix.get_cell(x, y);
     current->already_processed = true;
-    bool has_moved;
+    bool has_moved = false;
     if (current->immovable) return;
 
     current->velocity.y += 0.2f;
@@ -32,15 +53,23 @@ void ParticleBehavior::solid_behavior(CellularMatrix& matrix, int x, int y) {
             has_moved = true;
         } else {
             Particle* blocking_particle = matrix.cells[next_y][current_x];
-            if (blocking_particle != nullptr && blocking_particle->velocity.y < current->velocity.y) {
-                float avg_velocity = (blocking_particle->velocity.y + current->velocity.y) / 2;
+            if (blocking_particle != nullptr && blocking_particle->free_falling) {
+                float avg_velocity = blocking_particle->velocity.y * 0.25f + current->velocity.y * 0.75f;
                 blocking_particle->velocity.y = avg_velocity;
                 current->velocity.y = avg_velocity;
+            }
+            if (current->free_falling) {
+                if (diagonal_slide(matrix, current_x, current_y, current)) has_moved = true;
+                if (has_moved) break;
             }
         }
     }
 
     if (has_moved) {
         matrix.wake_chunks(current_x, current_y);
+        current->free_falling = true;
+    } else {
+        current->free_falling = false;
+        current->velocity.y = 1;
     }
 }
