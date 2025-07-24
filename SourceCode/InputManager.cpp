@@ -27,8 +27,8 @@ bool InputManager::left_click_add() {
             int gridY = mousePos.y / cellSize;
             gridX += Utility::random_int(-particle_spread, particle_spread);
             gridY += Utility::random_int(-particle_spread, particle_spread);
-            if (matrix.get_cell(gridX, gridY) == nullptr && is_within_bounds(gridX, gridY)) {
-                matrix.set_cell(gridX, gridY, new SandParticle());
+            if (matrix.get_current_cell(gridX, gridY) == nullptr && is_within_bounds(gridX, gridY)) {
+                matrix.set_current_cell(gridX, gridY, new SandParticle());
                 matrix.particles++;
                 matrix.wake_chunks(gridX, gridY);
             }
@@ -54,13 +54,13 @@ void InputManager::right_click_add() {
 
             for (int y = startY; y <= endY; ++y) {
                 for (int x = startX; x <= endX; ++x) {
-                    if (matrix.get_cell(x, y) == nullptr && is_within_bounds(x, y)) {
+                    if (matrix.get_current_cell(x, y) == nullptr && is_within_bounds(x, y)) {
                         switch (particle_type) {
                             case 0:
-                                matrix.set_cell(x, y, new SandParticle());
+                                matrix.set_current_cell(x, y, new SandParticle());
                                 break;
                             case 1:
-                                matrix.set_cell(x, y, new StoneParticle());
+                                matrix.set_current_cell(x, y, new StoneParticle());
                                 break;
                         }
 

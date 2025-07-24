@@ -6,12 +6,20 @@
 #include "../ThreadPool.h"
 #include "Chunk.h"
 
+struct Move {
+    int from_x, from_y;
+    int to_x, to_y;
+    Particle* particle;
+};
+
 class CellularMatrix {
 public:
     int width;
     int height;
     int particles = 0;
     std::vector<std::vector<Particle*>> cells;
+    std::vector<std::vector<Particle*>> next_cells;
+
     std::vector<std::vector<Chunk>> chunks;
 
     int num_threads = std::thread::hardware_concurrency();
@@ -20,8 +28,11 @@ public:
     CellularMatrix(int width, int height);
     void display_matrix(sf::RenderWindow& window, int CELL_SIZE, ThreadPool& thread_pool);
 
-    void set_cell(int x, int y, Particle* particle);
-    Particle* get_cell(int x, int y);
+    void set_current_cell(int x, int y, Particle* particle);
+    void set_next_cell(int x, int y, Particle* particle);
+    Particle* get_current_cell(int x, int y);
+    Particle* get_next_cell(int x, int y);
+
     void update_all_cells();
     void delete_particle(Particle* p, int x, int y);
 
@@ -31,7 +42,9 @@ public:
     void display_chunk_debug(sf::RenderWindow& window, int CELL_SIZE);
 
 private:
-    bool is_cell_empty(int x, int y);
+    bool is_next_cell_empty(int x, int y);
+    void apply_moves();
+    void destroy_particles();
     void update_cell(int x, int y);
     void update_solid_cell(int x, int y);
     void cycle_chunks();

@@ -13,8 +13,10 @@ CellularMatrix::CellularMatrix(int width, int height)
 	: width(width), height(height) {
 
 	cells.resize(height);
+    next_cells.resize(height);
 	for (int row = 0; row < height; ++row) {
 		cells[row].resize(width, nullptr);
+	    next_cells[row].resize(width, nullptr);
 	}
 
     int chunk_pixels = CHUNK_SIZE;
@@ -96,61 +98,55 @@ void CellularMatrix::display_matrix(sf::RenderWindow& window, int Cell_size, Thr
     }
 }
 
-void CellularMatrix::set_cell(int x, int y, Particle* particle) {
+void CellularMatrix::set_current_cell(int x, int y, Particle* particle) {
 	if(x >= 0 && x < width && y >= 0 && y < height)
 		cells[y][x] = particle;
 }
-
-Particle* CellularMatrix::get_cell(int x, int y) {
+void CellularMatrix::set_next_cell(int x, int y, Particle* particle) {
+    if(x >= 0 && x < width && y >= 0 && y < height)
+        next_cells[y][x] = particle;
+}
+Particle* CellularMatrix::get_current_cell(int x, int y) {
 	if (x >= 0 && x < width && y >= 0 && y < height)
 		return cells[y][x];
 	return nullptr;
 }
+Particle* CellularMatrix::get_next_cell(int x, int y) {
+    if (x >= 0 && x < width && y >= 0 && y < height)
+        return next_cells[y][x];
+    return nullptr;
+}
+
 
 void reset_particles(CellularMatrix& matrix) {
-	int height = matrix.height;
-	int width = matrix.width;
-	for (int y = 0; y < height; ++y) {
-		for (int x = 0; x < width; ++x) {
-			Particle* current = matrix.cells[y][x];
-			if (current != nullptr) {
-				current->already_processed = false;
-			}
-		}
-	}
+    int height = matrix.height;
+    int width = matrix.width;
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            Particle* current = matrix.cells[y][x];
+            if (current != nullptr) {
+                current->already_processed = false;
+            }
+        }
+    }
 }
 
 void CellularMatrix::update_all_cells() {
     reset_particles(*this);
 
-    for (int cy = NBR_OF_CHUNKS - 1; cy >= 0; cy--) {
-        for (int cx = 0; cx < NBR_OF_CHUNKS; ++cx) {
-            Chunk& chunk = chunks[cy][cx];
-            if (!chunk.wake_frames > 0) continue;
-
-            int start_y = cy * CHUNK_SIZE;
-            int end_y = std::min(height, start_y + CHUNK_SIZE);
-
-            int start_x = cx * CHUNK_SIZE;
-            int end_x = std::min(width, start_x + CHUNK_SIZE);
-
-            for (int y = end_y - 1; y >= start_y; --y) {
-                bool leftToRight = Utility::random_bool();
-                if (leftToRight) {
-                    for (int x = start_x; x < end_x; ++x) {
-                        update_cell(x, y);
-                    }
-                }
-                else {
-                    for (int x = end_x - 1; x >= start_x; --x) {
-                        update_cell(x, y);
-                    }
-                }
+    for (int y = height - 1; y >= 0; --y) {
+        bool left_to_right = Utility::random_bool();
+        if (left_to_right) {
+            for (int x = 0; x < width; ++x) {
+                update_cell(x, y);
+            }
+        } else {
+            for (int x = width - 1; x >= 0; --x) {
+                update_cell(x, y);
             }
         }
-    }
 
-    cycle_chunks();
+    }
 }
 
 Chunk* CellularMatrix::get_chunk(int x, int y) {
@@ -183,7 +179,7 @@ void CellularMatrix::wake_chunks(int x, int y) {
 }
 
 void CellularMatrix::update_cell(int x, int y) {
-	Particle* p = get_cell(x, y);
+	Particle* p = get_current_cell(x, y);
 	if (p != nullptr && !p->already_processed) {
 		switch (p->type) {
 		case ParticleType::Solid:
@@ -193,14 +189,9 @@ void CellularMatrix::update_cell(int x, int y) {
 	}
 }
 
-bool CellularMatrix::is_cell_empty(int x, int y) {
-	return x >= 0 && x < width && y >= 0 && y < height && cells[y][x] == nullptr;
-}
 
-void CellularMatrix::delete_particle(Particle* p, int x, int y) {
-    delete p;
-    particles--;
-    set_cell(x, y, nullptr);
+bool CellularMatrix::is_next_cell_empty(int x, int y) {
+	return x >= 0 && x < width && y >= 0 && y < height && next_cells[y][x] == nullptr;
 }
 
 void CellularMatrix::cycle_chunks() {

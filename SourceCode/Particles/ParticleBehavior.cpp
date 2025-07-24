@@ -8,8 +8,8 @@
 #include <cmath>
 
 bool diagonal_slide(CellularMatrix& matrix, int x, int y, Particle* p) {
-    bool can_slide_DR = matrix.get_cell(x + 1, y + 1) == nullptr;
-    bool can_slide_DL = matrix.get_cell(x - 1, y + 1) == nullptr;
+    bool can_slide_DR = matrix.get_current_cell(x + 1, y + 1) == nullptr;
+    bool can_slide_DL = matrix.get_current_cell(x - 1, y + 1) == nullptr;
     int direction = 0;
     bool has_slided = false;
     if (can_slide_DR && can_slide_DL) {
@@ -20,18 +20,20 @@ bool diagonal_slide(CellularMatrix& matrix, int x, int y, Particle* p) {
         direction = -1;
     }
     if (direction != 0) {
-        matrix.set_cell(x + direction, y + 1, p);
-        matrix.set_cell(x, y, nullptr);
+        matrix.set_current_cell(x + direction, y + 1, p);
+        matrix.set_current_cell(x, y, nullptr);
         has_slided = true;
     }
     return has_slided;
 }
 
 void ParticleBehavior::solid_behavior(CellularMatrix& matrix, int x, int y) {
-    Particle* current = matrix.get_cell(x, y);
-    current->already_processed = true;
+    Particle* current = matrix.get_current_cell(x, y);
     bool has_moved = false;
-    if (current->immovable) return;
+    current->already_processed = true;
+    if (current->immovable) {
+        return;
+    };
 
     current->velocity.y += 0.2f;
 
@@ -42,13 +44,15 @@ void ParticleBehavior::solid_behavior(CellularMatrix& matrix, int x, int y) {
     for (int i = 0; i < fall_distance; ++i) {
         int next_y = current_y + 1;
         if (next_y >= matrix.height) {
-            matrix.delete_particle(current, current_x, current_y);
+            delete current;
+            matrix.set_current_cell(current_x, current_y, nullptr);
+            matrix.particles--;
             return;
         }
-        bool canMoveDown = matrix.get_cell(current_x, next_y) == nullptr;
+        bool canMoveDown = matrix.get_current_cell(current_x, next_y) == nullptr;
         if (canMoveDown) {
-            matrix.cells[next_y][current_x] = current;
-            matrix.cells[current_y][current_x] = nullptr;
+            matrix.set_current_cell(current_x, next_y, current);
+            matrix.set_current_cell(current_x, current_y, nullptr);
             current_y = next_y;
             has_moved = true;
         } else {
@@ -58,9 +62,9 @@ void ParticleBehavior::solid_behavior(CellularMatrix& matrix, int x, int y) {
                 blocking_particle->velocity.y = avg_velocity;
                 current->velocity.y = avg_velocity;
             }
-            if (current->free_falling) {
-                if (diagonal_slide(matrix, current_x, current_y, current)) has_moved = true;
-                if (has_moved) break;
+            if (current->free_falling && !has_moved) {
+                //if (diagonal_slide(matrix, current_x, current_y, current)) has_moved = true;
+                //if (has_moved) break;
             }
         }
     }
