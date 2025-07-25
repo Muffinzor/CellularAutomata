@@ -46,7 +46,7 @@ int main() {
 
         window.clear();
         matrix.display_matrix(window, CELL_SIZE, pool);
-        matrix.display_chunk_debug(window, CELL_SIZE);
+        //matrix.display_chunk_debug(window, CELL_SIZE);
         inputManager.draw_selection_rectangle(window);
         window.display();
     }

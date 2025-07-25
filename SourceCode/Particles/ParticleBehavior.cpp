@@ -58,13 +58,14 @@ void ParticleBehavior::solid_behavior(CellularMatrix& matrix, int x, int y) {
         } else {
             Particle* blocking_particle = matrix.cells[next_y][current_x];
             if (blocking_particle != nullptr && blocking_particle->free_falling) {
-                float avg_velocity = blocking_particle->velocity.y * 0.25f + current->velocity.y * 0.75f;
-                blocking_particle->velocity.y = avg_velocity;
-                current->velocity.y = avg_velocity;
+                if (blocking_particle->velocity.y <= current->velocity.y) {
+                    if (diagonal_slide(matrix, current_x, current_y, current)) has_moved = true;
+                    if (has_moved) break;
+                }
             }
-            if (current->free_falling && !has_moved) {
-                //if (diagonal_slide(matrix, current_x, current_y, current)) has_moved = true;
-                //if (has_moved) break;
+            if (!has_moved) {
+                if (diagonal_slide(matrix, current_x, current_y, current)) has_moved = true;
+                if (has_moved) break;
             }
         }
     }
