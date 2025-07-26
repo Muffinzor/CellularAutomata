@@ -25,7 +25,7 @@ public:
     float friction;
     float inertial_resistance;
 
-    bool free_falling;
+    bool free_falling = true;
     bool already_processed;
 
     virtual ~Particle() = default;

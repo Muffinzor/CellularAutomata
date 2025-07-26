@@ -34,7 +34,8 @@ add_executable(CellularAutomata ${SOURCES}
         SourceCode/Particles/ParticleBehavior.cpp
         SourceCode/Particles/ParticleBehavior.h
         SourceCode/ThreadPool.cpp
-        SourceCode/ThreadPool.h)
+        SourceCode/ThreadPool.h
+        SourceCode/Particles/MudParticle.h)
 
 target_link_libraries(CellularAutomata
         sfml-graphics

@@ -2,6 +2,9 @@
 #include "Utility.h"
 #include "Particles/SandParticle.h"
 #include "Particles/StoneParticle.h"
+#include "Particles/MudParticle.h"
+#include "Particles/Particle.h"
+
 
 bool right_click_held = false;
 sf::Vector2i right_click_start;
@@ -28,7 +31,17 @@ bool InputManager::left_click_add() {
             gridX += Utility::random_int(-particle_spread, particle_spread);
             gridY += Utility::random_int(-particle_spread, particle_spread);
             if (matrix.get_current_cell(gridX, gridY) == nullptr && is_within_bounds(gridX, gridY)) {
-                matrix.set_current_cell(gridX, gridY, new SandParticle());
+                switch (particle_type) {
+                    case 0:
+                        matrix.set_current_cell(gridX, gridY, new SandParticle());
+                        break;
+                    case 1:
+                        matrix.set_current_cell(gridX, gridY, new SandParticle());
+                        break;
+                    case 2:
+                        matrix.set_current_cell(gridX, gridY, new MudParticle());
+                        break;
+                }
                 matrix.particles++;
                 matrix.wake_chunks(gridX, gridY);
             }
@@ -61,6 +74,9 @@ void InputManager::right_click_add() {
                                 break;
                             case 1:
                                 matrix.set_current_cell(x, y, new StoneParticle());
+                                break;
+                            case 2:
+                                matrix.set_current_cell(x, y, new MudParticle());
                                 break;
                         }
 
@@ -99,5 +115,7 @@ void InputManager::draw_selection_rectangle(sf::RenderWindow& window) {
 void InputManager::switch_particle() {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)) particle_type = 0;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) particle_type = 1;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R)) particle_type = 2;
+
 }
 

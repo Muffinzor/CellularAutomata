@@ -55,6 +55,32 @@ int diagonal_slide(CellularMatrix& matrix, int x, int y, Particle* p) {
     return direction;
 }
 
+void set_free_falling(CellularMatrix& matrix, Particle* current, int x, int y) {
+    Particle* left_particle = matrix.get_current_cell(x - 1, y);
+    Particle* right_particle = matrix.get_current_cell(x + 1, y);
+    if (left_particle != nullptr) {
+        float resistance = left_particle->inertial_resistance;
+        if (Utility::random_float(0,1) > resistance)
+            left_particle->free_falling = true;
+    }
+    if (right_particle != nullptr) {
+        float resistance = right_particle->inertial_resistance;
+        if (Utility::random_float(0,1) > resistance)
+            right_particle->free_falling = true;
+    }
+}
+
+bool friction_stop(CellularMatrix& matrix, Particle* current, int x, int y) {
+    Particle* under_particle = matrix.get_current_cell(x, y + 1);
+    if (under_particle == nullptr) return true;
+    float stop_chance = under_particle->friction;
+    if (Utility::random_float(0,1) < stop_chance) {
+        current->free_falling = false;
+        return true;
+    }
+    return false;
+}
+
 void ParticleBehavior::solid_behavior(CellularMatrix& matrix, int x, int y) {
     Particle* current = matrix.get_current_cell(x, y);
     destroyed = false;
@@ -73,17 +99,23 @@ void ParticleBehavior::solid_behavior(CellularMatrix& matrix, int x, int y) {
         if (!destroyed && straight_down(matrix, current, current_x, current_y)) {
             current_y++;
             has_moved = true;
-        } else if (!destroyed) {
+            set_free_falling(matrix, current, current_x, current_y);
+        } else if (!destroyed && current->free_falling) {
+            if (friction_stop(matrix, current, x, y)) break;
             int direction = diagonal_slide(matrix, current_x, current_y, current);
             if (direction == 0) break;
             current_x += direction;
             current_y++;
             has_moved = true;
+            set_free_falling(matrix, current, current_x, current_y);
         }
 
     }
     if (!has_moved) {
         current->velocity.y = 1;
+        current->free_falling = false;
+    } else {
+        current->free_falling = true;
     }
 }
 
