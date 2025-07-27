@@ -182,9 +182,12 @@ void CellularMatrix::update_cell(int x, int y) {
 	Particle* p = get_current_cell(x, y);
 	if (p != nullptr && !p->already_processed) {
 		switch (p->type) {
-		case ParticleType::Solid:
-			ParticleBehavior::solid_behavior(*this, x, y);
-			break;
+		    case ParticleType::Solid:
+			    ParticleBehavior::solid_behavior(*this, x, y);
+			    break;
+		    case ParticleType::Liquid:
+		        ParticleBehavior::liquid_behavior(*this, x, y);
+		        break;
 		}
 	}
 }

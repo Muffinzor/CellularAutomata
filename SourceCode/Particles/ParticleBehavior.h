@@ -6,6 +6,7 @@
 class ParticleBehavior {
 public:
     static void solid_behavior(CellularMatrix&, int x, int y);
+    static void liquid_behavior(CellularMatrix&, int x, int y);
 };
 
 

@@ -7,8 +7,8 @@ class InputManager {
     sf::RenderWindow& window;
     int cellSize;
 
-    int particle_spread = 3;
-    int particle_multipler = 5;
+    int particle_spread = 1;
+    int particle_multipler = 1;
 
 public:
     InputManager(CellularMatrix& m, sf::RenderWindow& w, int cs)
@@ -21,5 +21,6 @@ public:
 
 private:
     void switch_particle();
+    void delete_particle(int x, int y);
     bool is_within_bounds(int x, int y) const;
 };

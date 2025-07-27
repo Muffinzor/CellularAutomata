@@ -24,6 +24,7 @@ public:
     float density;
     float friction;
     float inertial_resistance;
+    int dispersion;
 
     bool free_falling = true;
     bool already_processed;

@@ -23,6 +23,10 @@ bool straight_down(CellularMatrix& matrix, Particle* p, int x, int y) {
         matrix.set_current_cell(x, y, nullptr);
         return true;
     }
+    Particle* blocking_particle = matrix.get_current_cell(x, next_y);
+    float avg_velocity = (blocking_particle->velocity.y + p->velocity.y)/2;
+    blocking_particle->velocity.y = avg_velocity;
+    p->velocity.y = avg_velocity;
     return false;
 }
 
@@ -53,6 +57,24 @@ int diagonal_slide(CellularMatrix& matrix, int x, int y, Particle* p) {
     return direction;
 }
 
+int horizontal_slide(CellularMatrix& matrix, int x, int y, Particle* p) {
+    int direction = 0;
+    while (p->velocity.x == 0) {
+        p->velocity.x = Utility::random_float(-1, 1);
+    }
+    if (p->velocity.x < 0) direction = -1;
+    if (p->velocity.x > 0) direction = 1;
+    bool can_move_in_direction = matrix.get_current_cell(x + direction, y) == nullptr
+                                && x + direction < matrix.width  && x + direction >= 0;
+    if (can_move_in_direction) {
+        matrix.set_current_cell(x + direction, y, p);
+        matrix.set_current_cell(x, y, nullptr);
+        return direction;
+    }
+    p->velocity.x = -p->velocity.x;
+    return 0;
+}
+
 void set_free_falling(CellularMatrix& matrix, Particle* current, int x, int y) {
     Particle* left_particle = matrix.get_current_cell(x - 1, y);
     Particle* right_particle = matrix.get_current_cell(x + 1, y);
@@ -79,6 +101,7 @@ bool friction_stop(CellularMatrix& matrix, Particle* current, int x, int y) {
     return false;
 }
 
+/** causes segfault, needs fix */
 void swap_place_density(CellularMatrix& matrix, int x, int y) {
     Particle* under_particle = matrix.get_current_cell(x, y + 1);
 
@@ -98,7 +121,7 @@ void ParticleBehavior::solid_behavior(CellularMatrix& matrix, int x, int y) {
     current->already_processed = true;
     if (current->immovable) {
         return;
-    };
+    }
     current->velocity.y += 0.2f;
 
     int current_x = x;
@@ -111,21 +134,102 @@ void ParticleBehavior::solid_behavior(CellularMatrix& matrix, int x, int y) {
             has_moved = true;
             set_free_falling(matrix, current, current_x, current_y);
         } else if (!destroyed && current->free_falling) {
-            swap_place_density(matrix, current_x, current_y);
             if (friction_stop(matrix, current, x, y)) break;
             int direction = diagonal_slide(matrix, current_x, current_y, current);
-            if (direction == 0) break;
-            current_x += direction;
-            current_y++;
-            has_moved = true;
-            set_free_falling(matrix, current, current_x, current_y);
+            if (!direction == 0) {
+                current_x += direction;
+                current_y++;
+                has_moved = true;
+                set_free_falling(matrix, current, current_x, current_y);
+            } else {
+                current_x += horizontal_slide(matrix, current_x, current_y, current);
+                if (friction_stop(matrix, current, x, y)) break;
+                i = i * 2;
+            }
         }
     }
     if (!has_moved) {
         current->velocity.y = 1;
+        current->velocity.x = 0;
         current->free_falling = false;
     } else {
         current->free_falling = true;
+    }
+}
+
+int liquid_slide(CellularMatrix& matrix, int x, int y) {
+    Particle* current = matrix.get_current_cell(x, y);
+    int current_x = x;
+    int current_y = y;
+    int jump = 0;
+    int direction = 0;
+
+    while (jump <= current->dispersion) {
+        jump++;
+        bool can_slide_DR = matrix.get_current_cell(current_x + jump, current_y + 1) == nullptr;
+        bool can_slide_DL = matrix.get_current_cell(current_x - jump, current_y + 1) == nullptr;
+        if (can_slide_DR && can_slide_DL) {
+            Utility::random_bool() ? direction = -jump : direction = jump;
+        } else if (can_slide_DR) {
+            direction = jump;
+        } else if (can_slide_DL) {
+            direction = -jump;
+        }
+        if (direction != 0) {
+            int next_y = y + 1;
+            if (next_y >= matrix.height) {
+                destroyed = true;
+                delete current;
+                matrix.set_current_cell(current_x, current_y, nullptr);
+                matrix.particles--;
+                break;
+            }
+            matrix.set_current_cell(current_x + direction, current_y + 1, current);
+            matrix.set_current_cell(current_x, current_y, nullptr);
+            return direction;
+        }
+    }
+    return direction;
+}
+
+void ParticleBehavior::liquid_behavior(CellularMatrix& matrix, int x, int y) {
+    Particle* current = matrix.get_current_cell(x, y);
+    destroyed = false;
+    bool has_fell = false;
+    current->already_processed = true;
+    current->velocity.y += 0.2f;
+
+    int current_x = x;
+    int current_y = y;
+    int moves = current->velocity.y;
+
+    for (int i = 0; i < current->velocity.y; ++i) {
+        if (destroyed) return;
+        // Straight down
+        if (straight_down(matrix, current, current_x, current_y)) {
+            current_y++;
+            has_fell = true;
+            continue;
+        }
+        if (destroyed) return;
+        //Diagonal
+        int direction = liquid_slide(matrix, current_x, current_y);
+        if (!direction == 0) {
+            has_fell = true;
+            current_x += direction;
+            current_y++;
+        }
+        if (destroyed) return;
+        //Horizontal
+        for (int i = 0; i < current->dispersion; ++i) {
+            if (matrix.get_current_cell(current_x, current_y + 1) == nullptr) break;
+            current_x += horizontal_slide(matrix, current_x, current_y, current);
+            current->velocity.y = current->velocity.y/2;
+        }
+        break;
+    }
+    if (!has_fell && !destroyed) {
+        current->velocity.y = 1;
     }
 }
 

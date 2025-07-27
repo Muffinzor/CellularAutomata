@@ -3,12 +3,12 @@
 #include "Particles/SandParticle.h"
 #include "Particles/StoneParticle.h"
 #include "Particles/MudParticle.h"
+#include "Particles/WaterParticle.h"
 #include "Particles/Particle.h"
 
 
 bool right_click_held = false;
 sf::Vector2i right_click_start;
-
 int particle_type = 0;
 
 void InputManager::handle_input() {
@@ -19,6 +19,13 @@ void InputManager::handle_input() {
 bool InputManager::is_within_bounds(int x, int y) const {
     if (x < 0 || x >= matrix.width || y < 0 || y >= matrix.height) return false;
     return true;
+}
+
+void InputManager::delete_particle(int x, int y) {
+    if (matrix.get_current_cell(x, y) == nullptr) return;
+    delete matrix.get_current_cell(x, y);
+    matrix.set_current_cell(x, y, nullptr);
+    matrix.particles--;
 }
 
 bool InputManager::left_click_add() {
@@ -39,7 +46,7 @@ bool InputManager::left_click_add() {
                         matrix.set_current_cell(gridX, gridY, new SandParticle());
                         break;
                     case 2:
-                        matrix.set_current_cell(gridX, gridY, new MudParticle());
+                        matrix.set_current_cell(gridX, gridY, new WaterParticle());
                         break;
                     case 3:
                         matrix.set_current_cell(gridX, gridY, new SandParticle());
@@ -79,15 +86,13 @@ void InputManager::right_click_add() {
                                 matrix.set_current_cell(x, y, new StoneParticle());
                                 break;
                             case 2:
-                                matrix.set_current_cell(x, y, new MudParticle());
+                                matrix.set_current_cell(x, y, new WaterParticle());
                                 break;
                         }
                         matrix.particles++;
                         matrix.wake_chunks(x, y);
                     } else if (is_within_bounds(x, y) && particle_type == 3 && !(matrix.get_current_cell(x, y) == nullptr)) {
-                        delete matrix.get_current_cell(x,y);
-                        matrix.set_current_cell(x, y, nullptr);
-                        matrix.particles--;
+                        delete_particle(x, y);
                     }
                 }
             }
@@ -123,6 +128,5 @@ void InputManager::switch_particle() {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) particle_type = 1;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R)) particle_type = 2;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)) particle_type = 3;
-
 }
 
