@@ -41,6 +41,9 @@ bool InputManager::left_click_add() {
                     case 2:
                         matrix.set_current_cell(gridX, gridY, new MudParticle());
                         break;
+                    case 3:
+                        matrix.set_current_cell(gridX, gridY, new SandParticle());
+                        break;
                 }
                 matrix.particles++;
                 matrix.wake_chunks(gridX, gridY);
@@ -67,7 +70,7 @@ void InputManager::right_click_add() {
 
             for (int y = startY; y <= endY; ++y) {
                 for (int x = startX; x <= endX; ++x) {
-                    if (matrix.get_current_cell(x, y) == nullptr && is_within_bounds(x, y)) {
+                    if (matrix.get_current_cell(x, y) == nullptr && is_within_bounds(x, y) && particle_type < 3) {
                         switch (particle_type) {
                             case 0:
                                 matrix.set_current_cell(x, y, new SandParticle());
@@ -79,9 +82,12 @@ void InputManager::right_click_add() {
                                 matrix.set_current_cell(x, y, new MudParticle());
                                 break;
                         }
-
                         matrix.particles++;
                         matrix.wake_chunks(x, y);
+                    } else if (is_within_bounds(x, y) && particle_type == 3 && !(matrix.get_current_cell(x, y) == nullptr)) {
+                        delete matrix.get_current_cell(x,y);
+                        matrix.set_current_cell(x, y, nullptr);
+                        matrix.particles--;
                     }
                 }
             }
@@ -116,6 +122,7 @@ void InputManager::switch_particle() {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)) particle_type = 0;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) particle_type = 1;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R)) particle_type = 2;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)) particle_type = 3;
 
 }
 

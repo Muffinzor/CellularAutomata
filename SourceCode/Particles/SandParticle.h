@@ -10,5 +10,6 @@ public:
         base_color = Utility::get_RGB(hue, 1, 1);
         inertial_resistance = 0.15f;
         friction = 0.1f;
+        density = 5;
     }
 };
