@@ -10,6 +10,7 @@ public:
         color = Utility::get_RGB(hue, saturation, 1);
         base_color = Utility::get_RGB(hue, saturation, 1);
         density = 15;
-        dispersion = 5;
+        dispersion = 15;
+        friction = 0;
     }
 };
