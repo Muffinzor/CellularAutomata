@@ -33,6 +33,8 @@ public:
     Particle* get_current_cell(int x, int y);
     Particle* get_next_cell(int x, int y);
 
+    void update_chunk(int chunk_x, int chunk_y, Chunk* chunk);
+
     void update_all_cells();
     void delete_particle(Particle* p, int x, int y);
 

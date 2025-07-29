@@ -93,6 +93,7 @@ void InputManager::right_click_add() {
                         matrix.wake_chunks(x, y);
                     } else if (is_within_bounds(x, y) && particle_type == 3 && !(matrix.get_current_cell(x, y) == nullptr)) {
                         delete_particle(x, y);
+                        matrix.wake_chunks(x, y);
                     }
                 }
             }

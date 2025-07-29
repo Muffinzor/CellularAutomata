@@ -7,8 +7,8 @@ class InputManager {
     sf::RenderWindow& window;
     int cellSize;
 
-    int particle_spread = 1;
-    int particle_multipler = 1;
+    int particle_spread = 3;
+    int particle_multipler = 3;
 
 public:
     InputManager(CellularMatrix& m, sf::RenderWindow& w, int cs)

@@ -163,19 +163,20 @@ void ParticleBehavior::solid_behavior(CellularMatrix& matrix, int x, int y) {
                 current_y++;
                 has_moved = true;
                 set_free_falling(matrix, current, current_x, current_y);
-            } else {
+            } else if (!destroyed) {
                 current_x += horizontal_slide(matrix, current_x, current_y, current);
                 if (friction_stop(matrix, current, x, y)) break;
                 i = i * 2;
             }
         }
     }
-    if (!has_moved) {
+    if (!has_moved && !destroyed) {
         current->velocity.y = 1;
         current->velocity.x = 0;
         current->free_falling = false;
-    } else {
+    } else if (!destroyed) {
         current->free_falling = true;
+        matrix.wake_chunks(current_x, current_y);
     }
 }
 
@@ -214,7 +215,7 @@ int liquid_slide(CellularMatrix& matrix, int x, int y) {
                 delete current;
                 matrix.set_current_cell(current_x, current_y, nullptr);
                 matrix.particles--;
-                break;
+                return 0;
             }
             matrix.set_current_cell(current_x + direction, current_y + 1, current);
             matrix.set_current_cell(current_x, current_y, nullptr);
@@ -229,9 +230,6 @@ void ParticleBehavior::liquid_behavior(CellularMatrix& matrix, int x, int y) {
     destroyed = false;
     bool has_moved = false;
     current->already_processed = true;
-    if (current->immovable) {
-        return;
-    }
     current->velocity.y += 0.2f;
 
     int current_x = x;
@@ -245,23 +243,28 @@ void ParticleBehavior::liquid_behavior(CellularMatrix& matrix, int x, int y) {
             set_free_falling(matrix, current, current_x, current_y);
         } else if (!destroyed) {
             int direction = liquid_slide(matrix, current_x, current_y);
-            if (!direction == 0) {
+            if (!direction == 0 && !destroyed) {
                 current_x += direction;
                 current_y++;
                 has_moved = true;
-            } else {
+            } else if (!destroyed) {
                 for (int j = 0; j < current->dispersion; ++j) {
-                    current->velocity.y = current->velocity.y * 0.8f;
-                    current_x += horizontal_slide(matrix, current_x, current_y, current);
+                    current->velocity.y = current->velocity.y * 0.9f;
+                    int movement = horizontal_slide(matrix, current_x, current_y, current);
+                    if (movement == 0) break;
+                    current_x += movement;
                     if (matrix.get_current_cell(current_x, current_y + 1) == nullptr) {
                         break;
                     }
                 }
+                break;
             }
         }
     }
-    if (!has_moved) {
+    if (!has_moved && !destroyed) {
         current->velocity.y = 1;
+    } else {
+        matrix.wake_chunks(current_x, current_y);
     }
 }
 

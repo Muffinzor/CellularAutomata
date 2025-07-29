@@ -54,7 +54,7 @@ void CellularMatrix::display_matrix(sf::RenderWindow& window, int Cell_size, Thr
     }
 
     for (int t = 0; t < num_threads; ++t) {
-        pool.enqueue([this, t, chunk_width, vertex_count, Cell_size](void) {
+        pool.enqueue([this, t, chunk_width, vertex_count, Cell_size]() {
             int start_x = t * chunk_width;
             int end_x = (t == num_threads - 1) ? width : (t + 1) * chunk_width;
             auto& va = thread_vertex_arrays[t];
@@ -131,8 +131,50 @@ void reset_particles(CellularMatrix& matrix) {
     }
 }
 
+void CellularMatrix::update_chunk(int chunk_x, int chunk_y, Chunk* chunk) {
+    if (chunk->wake_frames <= 0) return;
+    int start_x = chunk_x * CHUNK_SIZE;
+    int start_y = chunk_y * CHUNK_SIZE;
+
+    for (int y = start_y + CHUNK_SIZE - 1; y >= start_y; --y) {
+        bool left_to_right = Utility::random_bool();
+        if (left_to_right) {
+            for (int x = start_x; x < start_x + CHUNK_SIZE; ++x) {
+                update_cell(x, y);
+            }
+        } else {
+            for (int x = start_x + CHUNK_SIZE - 1; x >= start_x; --x) {
+                update_cell(x, y);
+            }
+        }
+    }
+}
+
+/**
 void CellularMatrix::update_all_cells() {
     reset_particles(*this);
+    cycle_chunks();
+
+    for (int chunk_y = NBR_OF_CHUNKS - 1; chunk_y >= 0; --chunk_y) {
+        bool left_to_right = Utility::random_bool();
+        if (left_to_right) {
+            for (int chunk_x = 0; chunk_x < NBR_OF_CHUNKS; ++chunk_x) {
+                Chunk* chunk = get_chunk(chunk_x, chunk_y);
+                if (chunk) update_chunk(chunk_x, chunk_y, chunk);
+            }
+        } else {
+            for (int chunk_x = NBR_OF_CHUNKS - 1; chunk_x >= 0; --chunk_x) {
+                Chunk* chunk = get_chunk(chunk_x, chunk_y);
+                if (chunk) update_chunk(chunk_x, chunk_y, chunk);
+            }
+        }
+    }
+}
+*/
+
+void CellularMatrix::update_all_cells() {
+    reset_particles(*this);
+    cycle_chunks();
 
     for (int y = height - 1; y >= 0; --y) {
         bool left_to_right = Utility::random_bool();
@@ -145,13 +187,12 @@ void CellularMatrix::update_all_cells() {
                 update_cell(x, y);
             }
         }
-
     }
 }
 
 Chunk* CellularMatrix::get_chunk(int x, int y) {
-    int chunk_x = x / CHUNK_SIZE;
-    int chunk_y = y / CHUNK_SIZE;
+    int chunk_x = x;
+    int chunk_y = y;
     if (chunk_y < 0 || chunk_y >= (int)chunks.size() || chunk_x < 0 || chunk_x >= (int)chunks[0].size()) {
         return nullptr;
     }
@@ -159,18 +200,17 @@ Chunk* CellularMatrix::get_chunk(int x, int y) {
 }
 
 void CellularMatrix::wake_chunks(int x, int y) {
-    Chunk* chunk = get_chunk(x, y);  // x,y in cells coord
-
     int chunk_x = x / CHUNK_SIZE;
     int chunk_y = y / CHUNK_SIZE;
+    Chunk* chunk = get_chunk(chunk_x, chunk_y);
 
     int given_frames = 5;
     chunk->wake_frames = given_frames;
 
     Chunk* chunk_left = (chunk_x > 0) ? &chunks[chunk_y][chunk_x - 1] : nullptr;
-    Chunk* chunk_right = (chunk_x < 25 - 1) ? &chunks[chunk_y][chunk_x + 1] : nullptr;
+    Chunk* chunk_right = (chunk_x < NBR_OF_CHUNKS - 1) ? &chunks[chunk_y][chunk_x + 1] : nullptr;
     Chunk* chunk_top = (chunk_y > 0) ? &chunks[chunk_y - 1][chunk_x] : nullptr;
-    Chunk* chunk_bottom = (chunk_y < 25 - 1) ? &chunks[chunk_y + 1][chunk_x] : nullptr;
+    Chunk* chunk_bottom = (chunk_y < NBR_OF_CHUNKS - 1) ? &chunks[chunk_y + 1][chunk_x] : nullptr;
 
     if (chunk_left) chunk_left->wake_frames = given_frames;
     if (chunk_right) chunk_right->wake_frames = given_frames;
@@ -219,7 +259,6 @@ void CellularMatrix::display_chunk_debug(sf::RenderWindow& window, int CELL_SIZE
                 rect.setFillColor(sf::Color::Transparent);
                 rect.setOutlineColor(sf::Color::Green);
                 rect.setOutlineThickness(1.0f);
-
                 window.draw(rect);
             }
         }

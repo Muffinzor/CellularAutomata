@@ -10,7 +10,7 @@ const int GRID_WIDTH = 400;
 const int GRID_HEIGHT = 400;
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode({ 800, 800 }), "Cellular Automata");
+    sf::RenderWindow window(sf::VideoMode({ GRID_WIDTH * CELL_SIZE, GRID_WIDTH * CELL_SIZE }), "Cellular Automata");
     ThreadPool pool(std::thread::hardware_concurrency());
 
     CellularMatrix matrix(GRID_WIDTH, GRID_HEIGHT);
